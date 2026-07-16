@@ -50,8 +50,8 @@ jobs:
 
     - name: Install .NET Android Workload
       run: |
-        cd ~
-        dotnet workload install android
+        # Restores exactly what android.csproj needs, staying inside .NET 8 context
+        dotnet workload restore android.csproj
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
 
     - name: Run on Android Emulator
@@ -63,10 +63,16 @@ jobs:
         script: |
           dotnet build android.csproj -c Release
           
+          # Install the built APK
           adb install bin/Release/net8.0-android/*-Signed.apk
+          
+          # Clear previous emulator logs
           adb logcat -c
+          
+          # Boot the app natively
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           
+          # Wait 5 seconds for execution, then print the logcat output
           sleep 5
           adb logcat -d | grep -i specialdirs || adb logcat -d
 
@@ -87,8 +93,8 @@ jobs:
 
     - name: Install .NET iOS Workload
       run: |
-        cd ~
-        dotnet workload install ios
+        # Restores exactly what ios.csproj needs, staying inside .NET 8 context
+        dotnet workload restore ios.csproj
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
 
     - name: Run on iOS Simulator
