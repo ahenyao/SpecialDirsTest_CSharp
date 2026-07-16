@@ -20,7 +20,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 8.0.x
 
     - name: Run App
       run: dotnet run --project specialdirs.csproj
@@ -35,7 +35,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 8.0.x
 
     - name: Install .NET Android Workload
       run: |
@@ -54,7 +54,7 @@ jobs:
         script: |
           dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true
           xharness android run \
-            --app="bin/Release/net9.0-android/specialdirs.apk" \
+            --app="bin/Release/net8.0-android/specialdirs.apk" \
             --package-name="com.ahenyao.specialdirs" \
             --output-directory="android-results"
 
@@ -68,7 +68,7 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
+        dotnet-version: 8.0.x
 
     - name: Install .NET iOS Workload
       run: |
@@ -80,8 +80,9 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:_XamarinSdkValidationSkip=true
+        # Build paths now naturally fall into net8.0-ios structures
+        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true
         xharness apple run \
-          --app="bin/Release/net9.0-ios/iossimulator-x64/specialdirs.app" \
+          --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" \
           --targets="ios-simulator-64" \
           --output-directory="ios-results"
