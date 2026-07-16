@@ -9,5 +9,7 @@
     <ApplicationTitle>specialdirs</ApplicationTitle>
     <ApplicationVersion>1</ApplicationVersion>
     <AndroidApplication>true</AndroidApplication>
+    
+    <GenerateApplicationManifest>true</GenerateApplicationManifest>
   </PropertyGroup>
 </Project>
