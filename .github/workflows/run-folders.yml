@@ -25,14 +25,13 @@ jobs:
     - name: Run App
       run: dotnet run --project specialdirs.csproj
 
-  # 2. Android Mobile Run (Fixed: using ubuntu-22.04 for native KVM hardware acceleration)
+  # 2. Android Mobile Run
   android-mobile-run:
     runs-on: ubuntu-22.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # Fixes occasional KVM permission hiccups on GitHub Linux runners
     - name: Enable KVM group permissions
       run: |
         echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -56,10 +55,11 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 34
-        arch: x86_64  # Standard fast architecture for Linux KVM
+        arch: x86_64
         target: google_apis
         script: |
-          dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true /p:CheckEolTargetFramework=false
+          # Added /p:CheckEolWorkloads=false to bypass the NETSDK1202 error
+          dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true /p:CheckEolWorkloads=false
           xharness android run \
             --app="bin/Release/net8.0-android/specialdirs.apk" \
             --package-name="com.ahenyao.specialdirs" \
@@ -87,7 +87,8 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:CheckEolTargetFramework=false
+        # Added /p:CheckEolWorkloads=false to bypass the NETSDK1202 error
+        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:CheckEolWorkloads=false
         xharness apple run \
           --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" \
           --targets="ios-simulator-64" \
