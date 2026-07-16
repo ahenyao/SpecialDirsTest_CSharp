@@ -16,7 +16,8 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Pin .NET SDK to 8.x via global.json
+    - name: Pin .NET SDK to 8.x
+      shell: bash
       run: echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
 
     - name: Setup .NET
@@ -34,8 +35,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Pin .NET SDK to 8.x via global.json
-      run: echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
+    - name: Isolate Project Context & Pin SDK
+      run: |
+        # Deletes the other projects so .NET cannot get confused
+        rm desktop.csproj ios.csproj specialdirs.csproj 2>/dev/null || true
+        echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
 
     - name: Enable KVM group permissions
       run: |
@@ -50,8 +54,7 @@ jobs:
 
     - name: Install .NET Android Workload
       run: |
-        # Restores exactly what android.csproj needs, staying inside .NET 8 context
-        dotnet workload restore android.csproj
+        dotnet workload restore
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
 
     - name: Run on Android Emulator
@@ -83,8 +86,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Pin .NET SDK to 8.x via global.json
-      run: echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
+    - name: Isolate Project Context & Pin SDK
+      run: |
+        # Deletes the other projects so .NET cannot get confused
+        rm desktop.csproj android.csproj specialdirs.csproj 2>/dev/null || true
+        echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -93,8 +99,7 @@ jobs:
 
     - name: Install .NET iOS Workload
       run: |
-        # Restores exactly what ios.csproj needs, staying inside .NET 8 context
-        dotnet workload restore ios.csproj
+        dotnet workload restore
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
 
     - name: Run on iOS Simulator
