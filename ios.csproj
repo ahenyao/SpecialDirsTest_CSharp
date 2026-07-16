@@ -8,7 +8,5 @@
     <ApplicationId>com.ahenyao.specialdirs</ApplicationId>
     <ApplicationTitle>specialdirs</ApplicationTitle>
     <ApplicationVersion>1</ApplicationVersion>
-
-    <MtouchLink>None</MtouchLink>
   </PropertyGroup>
 </Project>

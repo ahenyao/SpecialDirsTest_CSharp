@@ -52,9 +52,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Install .NET Android Workload
-      run: |
-        dotnet workload restore
-        dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
+      run: dotnet workload restore
 
     - name: Run on Android Emulator
       uses: reactivecircus/android-emulator-runner@v2
@@ -63,21 +61,15 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          # Generate a minimal AndroidManifest.xml to satisfy the build requirement
-          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ahenyao.specialdirs"><application android:label="specialdirs"/></manifest>' > AndroidManifest.xml
-          
           dotnet build android.csproj -c Release
           
           # Install the built APK
           adb install bin/Release/net8.0-android/*-Signed.apk
-          
-          # Clear previous emulator logs
           adb logcat -c
           
-          # Boot the app natively
+          # Boot the native wrapper activity
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           
-          # Wait 5 seconds for execution, then print the logcat output
           sleep 5
           adb logcat -d | grep -i specialdirs || adb logcat -d
 
@@ -92,6 +84,13 @@ jobs:
       run: |
         rm desktop.csproj android.csproj specialdirs.csproj 2>/dev/null || true
         echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
+
+    # Dynamically targets Xcode 16+ on the runner to satisfy the iOS 18.0 SDK
+    - name: Select Latest Xcode
+      run: |
+        LATEST_XCODE=$(find /Applications -maxdepth 1 -name "Xcode_*.app" | sort -V | tail -n 1)
+        echo "Selecting Xcode at $LATEST_XCODE"
+        sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
