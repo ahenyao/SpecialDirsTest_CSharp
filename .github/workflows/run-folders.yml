@@ -43,7 +43,11 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Install .NET Android Workload
-      run: dotnet workload install android
+      run: |
+        # Step out of the project folder to avoid multi-project ambiguity
+        cd ~
+        dotnet workload install android
+        dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
 
     - name: Run on Android Emulator
       uses: reactivecircus/android-emulator-runner@v2
@@ -81,6 +85,8 @@ jobs:
 
     - name: Install .NET iOS Workload
       run: |
+        # Step out of the project folder to avoid multi-project ambiguity
+        cd ~
         dotnet workload install ios
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
 
