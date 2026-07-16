@@ -54,10 +54,44 @@ jobs:
     - name: Install .NET Android Workload
       run: dotnet workload restore
 
-    # CRITICAL: Create the manifest BEFORE starting the emulator
-    - name: Generate Android Manifest
+    # Creates a native bridge class so the OS knows how to launch the C# console entry point
+    - name: Inject Native Android Launcher Entry
       run: |
-        echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ahenyao.specialdirs"><application android:label="specialdirs" /></manifest>' > AndroidManifest.xml
+        mkdir -p Properties
+        cat << 'EOF' > Properties/AndroidLauncher.cs
+        using Android.App;
+        using Android.OS;
+        using System;
+        using System.Reflection;
+
+        namespace AndroidAutoLauncher
+        {
+            [Activity(Label = "SpecialDirs", MainLauncher = true, Exported = true)]
+            public class MainActivity : Activity
+            {
+                protected override void OnCreate(Bundle? savedInstanceState)
+                {
+                    base.OnCreate(savedInstanceState);
+                    Console.WriteLine("====== STARTING APP EXECUTION ======");
+                    try
+                    {
+                        var entryPoint = Assembly.GetExecutingAssembly().EntryPoint;
+                        if (entryPoint != null)
+                        {
+                            var parameters = entryPoint.GetParameters().Length > 0 ? new object[] { Array.Empty<string>() } : null;
+                            entryPoint.Invoke(null, parameters);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine("Error executing main: " + ex.Message);
+                    }
+                    Console.WriteLine("====== END APP EXECUTION ======");
+                    Environment.Exit(0);
+                }
+            }
+        }
+        EOF
 
     - name: Run on Android Emulator
       uses: reactivecircus/android-emulator-runner@v2
@@ -66,20 +100,8 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          dotnet build android.csproj -c Release
-          
-          # Install the built APK
-          adb install bin/Release/net8.0-android/*-Signed.apk
-          
-          # Clear previous emulator logs
-          adb logcat -c
-          
-          # Boot the native wrapper activity
-          adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
-          
-          # Wait for execution, then print the logcat output
-          sleep 5
-          adb logcat -d | grep -i specialdirs || adb logcat -d
+          # Automatically builds, provisions the emulator, executes the binary, and captures the stdout output stream!
+          dotnet run --project android.csproj -c Release
 
   # 3. iOS Mobile Run
   ios-mobile-run:
