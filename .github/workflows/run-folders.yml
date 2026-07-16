@@ -23,8 +23,8 @@ jobs:
         dotnet-version: 9.0.x
 
     - name: Run App
-      # Added "--framework net9.0" to resolve the multi-targeting ambiguity
-      run: dotnet run --project specialdirs.csproj --framework net9.0
+      # No extra work needed here; it will default to net9.0 and run smoothly
+      run: dotnet run --project specialdirs.csproj
 
   # 2. Mobile Platforms (Android & iOS)
   mobile-run:
@@ -51,17 +51,19 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          dotnet build specialdirs.csproj -c Release -f net9.0-android
+          # We pass /p:MobileBuild=true to activate the android target framework
+          dotnet build specialdirs.csproj -c Release -f net9.0-android /p:MobileBuild=true
           xharness android run \
-            --app="bin/Release/net9.0-android/test.apk" \
+            --app="bin/Release/net9.0-android/specialdirs.apk" \
             --package-name="com.ahenyao.specialdirs" \
             --output-directory="android-results"
 
     # iOS Run
     - name: Run on iOS Simulator
       run: |
-        dotnet build specialdirs.csproj -c Release -f net9.0-ios -r iossimulator-x64
+        # We pass /p:MobileBuild=true to activate the ios target framework
+        dotnet build specialdirs.csproj -c Release -f net9.0-ios -r iossimulator-x64 /p:MobileBuild=true
         xharness apple run \
-          --app="bin/Release/net9.0-ios/iossimulator-x64/test.app" \
+          --app="bin/Release/net9.0-ios/iossimulator-x64/specialdirs.app" \
           --targets="ios-simulator-64" \
           --output-directory="ios-results"
