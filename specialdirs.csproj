@@ -3,8 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     
-    <TargetFramework Condition="'$(TargetAndroid)' == 'true'">net8.0-android</TargetFramework>
-    <TargetFramework Condition="'$(TargetiOS)' == 'true'">net8.0-ios</TargetFramework>
+    <TargetFramework Condition="'$(TargetAndroid)' == 'true'">net8.0-android34.0</TargetFramework>
+    <TargetFramework Condition="'$(TargetiOS)' == 'true'">net8.0-ios15.0</TargetFramework>
     <TargetFramework Condition="'$(TargetAndroid)' != 'true' and '$(TargetiOS)' != 'true'">net8.0</TargetFramework>
 
     <ImplicitUsings>enable</ImplicitUsings>
@@ -13,12 +13,6 @@
     <ApplicationId>com.ahenyao.specialdirs</ApplicationId>
     <ApplicationTitle>specialdirs</ApplicationTitle>
     <ApplicationVersion>1</ApplicationVersion>
-
-    <TargetPlatformVersion Condition="'$(TargetAndroid)' == 'true'">34.0</TargetPlatformVersion>
-    <SupportedOSPlatformVersion Condition="'$(TargetAndroid)' == 'true'">21.0</SupportedOSPlatformVersion>
-
-    <TargetPlatformVersion Condition="'$(TargetiOS)' == 'true'">17.2</TargetPlatformVersion>
-    <SupportedOSPlatformVersion Condition="'$(TargetiOS)' == 'true'">15.0</SupportedOSPlatformVersion>
   </PropertyGroup>
 
 </Project>
