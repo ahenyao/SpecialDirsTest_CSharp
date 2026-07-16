@@ -41,7 +41,8 @@ jobs:
     - name: Install .NET iOS and Android Workloads
       run: |
         dotnet workload install ios android
-        dotnet tool install --global Microsoft.DotNet.XHarness.CLI
+        # Install the tool with explicit source and allowing prerelease versions if necessary
+        dotnet tool install --global Microsoft.DotNet.XHarness.CLI --version "9.0.0-*" --add-source https://pkgs.dev.azure.com/dnceng/public/_nuget/v3/index.json || dotnet tool install --global Microsoft.DotNet.XHarness.CLI
 
     # Android Run
     - name: Run on Android Emulator
