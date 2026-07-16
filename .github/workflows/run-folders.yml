@@ -56,7 +56,8 @@ jobs:
         target: google_apis
         script: |
           dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true /p:CheckEolWorkloads=false
-          xharness android run --app="bin/Release/net8.0-android/specialdirs.apk" --package-name="com.ahenyao.specialdirs" --output-directory="android-results"
+          # Wrapped paths in quotes to fix XHarness argument parsing
+          xharness android run --app="bin/Release/net8.0-android34.0/specialdirs.apk" --package-name="com.ahenyao.specialdirs" --output-directory="android-results"
 
   # 3. iOS Mobile Run
   ios-mobile-run:
@@ -78,4 +79,5 @@ jobs:
     - name: Run on iOS Simulator
       run: |
         dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:CheckEolWorkloads=false
-        xharness apple run --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" --targets="ios-simulator-64" --output-directory="ios-results"
+        # Wrapped paths in quotes and updated framework directory string
+        xharness apple run --app="bin/Release/net8.0-ios15.0/iossimulator-x64/specialdirs.app" --targets="ios-simulator-64" --output-directory="ios-results"
