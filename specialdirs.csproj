@@ -3,8 +3,9 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     
-    <TargetFrameworks Condition="'$(MobileBuild)' == 'true'">net9.0;net9.0-android;net9.0-ios</TargetFrameworks>
-    <TargetFramework Condition="'$(MobileBuild)' != 'true'">net9.0</TargetFramework>
+    <TargetFramework Condition="'$(TargetAndroid)' == 'true'">net9.0-android</TargetFramework>
+    <TargetFramework Condition="'$(TargetiOS)' == 'true'">net9.0-ios</TargetFramework>
+    <TargetFramework Condition="'$(TargetAndroid)' != 'true' and '$(TargetiOS)' != 'true'">net9.0</TargetFramework>
 
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

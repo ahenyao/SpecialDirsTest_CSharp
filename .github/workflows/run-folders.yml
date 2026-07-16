@@ -25,9 +25,9 @@ jobs:
     - name: Run App
       run: dotnet run --project specialdirs.csproj
 
-  # 2. Android Emulator Run (Executed on Ubuntu with native KVM hardware acceleration)
+  # 2. Android Mobile Run (Executed on Intel macOS for hardware accelerated virtualization)
   android-mobile-run:
-    runs-on: ubuntu-latest
+    runs-on: macos-13
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -40,8 +40,6 @@ jobs:
     - name: Install .NET Android Workload
       run: |
         dotnet workload install android
-        
-        # Installs the official XHarness CLI using the public dotnet-eng feed
         dotnet tool install Microsoft.DotNet.XHarness.CLI \
           --global \
           --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" \
@@ -51,16 +49,16 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 34
-        arch: x86_64 # Linux runners use standard x86_64 architecture
+        arch: x86_64
         target: google_apis
         script: |
-          dotnet build specialdirs.csproj -c Release -f net9.0-android /p:MobileBuild=true
+          dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true
           xharness android run \
             --app="bin/Release/net9.0-android/specialdirs.apk" \
             --package-name="com.ahenyao.specialdirs" \
             --output-directory="android-results"
 
-  # 3. iOS Simulator Run (Executed on macOS)
+  # 3. iOS Mobile Run (Executed on Apple Silicon macOS)
   ios-mobile-run:
     runs-on: macos-14
     steps:
@@ -75,8 +73,6 @@ jobs:
     - name: Install .NET iOS Workload
       run: |
         dotnet workload install ios
-        
-        # Installs the official XHarness CLI using the public dotnet-eng feed
         dotnet tool install Microsoft.DotNet.XHarness.CLI \
           --global \
           --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" \
@@ -84,7 +80,7 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        dotnet build specialdirs.csproj -c Release -f net9.0-ios -r iossimulator-x64 /p:MobileBuild=true
+        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true
         xharness apple run \
           --app="bin/Release/net9.0-ios/iossimulator-x64/specialdirs.app" \
           --targets="ios-simulator-64" \
