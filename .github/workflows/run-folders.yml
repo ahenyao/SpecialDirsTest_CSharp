@@ -6,13 +6,12 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. Desktop Platforms (Windows, macOS, Linux)
+  # 1. Desktop Platforms
   desktop-run:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
-
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -23,7 +22,7 @@ jobs:
         dotnet-version: 8.0.x
 
     - name: Run App
-      run: dotnet run --project specialdirs.csproj
+      run: dotnet run --project desktop.csproj
 
   # 2. Android Mobile Run
   android-mobile-run:
@@ -53,10 +52,10 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true /p:CheckEolWorkloads=false
+          dotnet build android.csproj -c Release /p:CheckEolWorkloads=false
           
           # Install the built APK
-          adb install bin/Release/net8.0-android34.0/*-Signed.apk
+          adb install bin/Release/net8.0-android/*-Signed.apk
           
           # Clear previous emulator logs
           adb logcat -c
@@ -64,9 +63,9 @@ jobs:
           # Boot the app natively
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           
-          # Wait 5 seconds for execution, then print the logcat output!
+          # Wait 5 seconds for execution, then print the logcat output
           sleep 5
-          adb logcat -d
+          adb logcat -d | grep -i specialdirs || adb logcat -d
 
   # 3. iOS Mobile Run
   ios-mobile-run:
@@ -87,10 +86,8 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:CheckEolWorkloads=false
+        dotnet build ios.csproj -c Release -r iossimulator-x64 /p:CheckEolWorkloads=false
         
-        # Run the app via XHarness
-        xharness apple run --app="bin/Release/net8.0-ios15.0/iossimulator-x64/specialdirs.app" --targets="ios-simulator-64" --output-directory="ios-results"
+        xharness apple run --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" --targets="ios-simulator-64" --output-directory="ios-results"
         
-        # Print the logs to the console so you can see your folders!
         cat ios-results/*.log || true

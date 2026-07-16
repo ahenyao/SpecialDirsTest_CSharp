@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0-ios</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ApplicationId>com.ahenyao.specialdirs</ApplicationId>
+    <ApplicationTitle>specialdirs</ApplicationTitle>
+    <ApplicationVersion>1</ApplicationVersion>
+  </PropertyGroup>
+</Project>
