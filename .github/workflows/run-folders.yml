@@ -1,4 +1,4 @@
-name: Print Special Fold Folders
+name: Print Special Folders
 
 on:
   push:
@@ -58,7 +58,7 @@ jobs:
             --package-name="com.ahenyao.specialdirs" \
             --output-directory="android-results"
 
-  # 3. iOS Mobile Run (Fixed via MSBuild validation bypass)
+  # 3. iOS Mobile Run
   ios-mobile-run:
     runs-on: macos-14
     steps:
@@ -70,7 +70,7 @@ jobs:
       with:
         dotnet-version: 9.0.x
 
-     Tar: Install .NET iOS Workload
+    - name: Install .NET iOS Workload
       run: |
         dotnet workload install ios
         dotnet tool install Microsoft.DotNet.XHarness.CLI \
@@ -80,7 +80,6 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        # /p:_XamarinSdkValidationSkip=true forces MSBuild to ignore version checks
         dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:_XamarinSdkValidationSkip=true
         xharness apple run \
           --app="bin/Release/net9.0-ios/iossimulator-x64/specialdirs.app" \
