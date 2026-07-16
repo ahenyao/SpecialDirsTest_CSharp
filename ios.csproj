@@ -9,7 +9,6 @@
     <ApplicationTitle>specialdirs</ApplicationTitle>
     <ApplicationVersion>1</ApplicationVersion>
 
-    <PublishTrimmed>false</PublishTrimmed>
-    <MtouchLink>SdkOnly</MtouchLink>
+    <MtouchLink>None</MtouchLink>
   </PropertyGroup>
 </Project>
