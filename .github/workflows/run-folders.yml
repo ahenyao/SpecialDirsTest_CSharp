@@ -61,13 +61,15 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
+          # Generate an empty manifest so .NET can merge the auto-generated Launcher Activity into it
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ahenyao.specialdirs" />' > AndroidManifest.xml
+          
           dotnet build android.csproj -c Release
           
-          # Install the built APK
           adb install bin/Release/net8.0-android/*-Signed.apk
           adb logcat -c
           
-          # Boot the native wrapper activity
+          # Launch the app natively
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           
           sleep 5
@@ -85,12 +87,9 @@ jobs:
         rm desktop.csproj android.csproj specialdirs.csproj 2>/dev/null || true
         echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
 
-    # Dynamically targets Xcode 16+ on the runner to satisfy the iOS 18.0 SDK
-    - name: Select Latest Xcode
-      run: |
-        LATEST_XCODE=$(find /Applications -maxdepth 1 -name "Xcode_*.app" | sort -V | tail -n 1)
-        echo "Selecting Xcode at $LATEST_XCODE"
-        sudo xcode-select -s "$LATEST_XCODE/Contents/Developer"
+    # Force the runner to use the actual, installed version of Xcode to stop ILLink from crashing
+    - name: Set Xcode Version
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
