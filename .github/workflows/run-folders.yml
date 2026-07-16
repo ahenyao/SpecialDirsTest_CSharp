@@ -54,6 +54,49 @@ jobs:
     - name: Install .NET Android Workload
       run: dotnet workload restore
 
+    # We use a native GitHub run step to safely generate the C# file!
+    - name: Inject Android AutoLauncher
+      run: |
+        cat << 'EOF' > AutoLauncher.cs
+        using Android.App;
+        using Android.OS;
+        using System;
+        using System.Reflection;
+
+        namespace AndroidAutoLauncher
+        {
+            [Activity(Label = "SpecialDirs", MainLauncher = true, Exported = true)]
+            public class MainActivity : Activity
+            {
+                protected override void OnCreate(Bundle? savedInstanceState)
+                {
+                    base.OnCreate(savedInstanceState);
+                    Console.WriteLine("====== ANDROID APP BOOTED ======");
+                    try
+                    {
+                        var entryPoint = Assembly.GetExecutingAssembly().EntryPoint;
+                        if (entryPoint != null)
+                        {
+                            var parameters = entryPoint.GetParameters().Length > 0 ? new object[] { Array.Empty<string>() } : null;
+                            entryPoint.Invoke(null, parameters);
+                        }
+                        else
+                        {
+                            Console.WriteLine("NO C# ENTRY POINT FOUND!");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.ToString());
+                    }
+                    
+                    Console.WriteLine("====== ANDROID APP FINISHED ======");
+                    Environment.Exit(0);
+                }
+            }
+        }
+        EOF
+
     - name: Run on Android Emulator
       uses: reactivecircus/android-emulator-runner@v2
       with:
@@ -61,53 +104,21 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          # Dynamically inject an Android Activity to wrap and execute the C# Console App
-          cat << 'EOF' > AutoLauncher.cs
-          using Android.App;
-          using Android.OS;
-          using System;
-          using System.Reflection;
-
-          namespace AndroidAutoLauncher
-          {
-              // Exported=true is strictly required in Android 12+ for Launcher activities
-              [Activity(Label = "SpecialDirs", MainLauncher = true, Exported = true)]
-              public class MainActivity : Activity
-              {
-                  protected override void OnCreate(Bundle? savedInstanceState)
-                  {
-                      base.OnCreate(savedInstanceState);
-                      Console.WriteLine("====== ANDROID APP BOOTED ======");
-                      try
-                      {
-                          // Find your program's entry point and execute it
-                          var entryPoint = Assembly.GetExecutingAssembly().EntryPoint;
-                          if (entryPoint != null)
-                          {
-                              var parameters = entryPoint.GetParameters().Length > 0 ? new object[] { Array.Empty<string>() } : null;
-                              entryPoint.Invoke(null, parameters);
-                          }
-                          else
-                          {
-                              Console.WriteLine("NO C# ENTRY POINT FOUND!");
-                          }
-                      }
-                      catch (Exception ex)
-                      {
-                          Console.WriteLine(ex.ToString());
-                      }
-                      
-                      Console.WriteLine("====== ANDROID APP FINISHED ======");
-                      
-                      // Force the Android process to die so `dotnet run` detects completion and doesn't hang the CI runner
-                      Environment.Exit(0);
-                  }
-              }
-          }
-          EOF
+          # Build the APK (Manifest and Launcher are auto-generated!)
+          dotnet build android.csproj -c Release
           
-          # Run the app. This handles building, installing, launching, AND streaming logs!
-          dotnet run --project android.csproj -c Release
+          # Install the built APK
+          adb install bin/Release/net8.0-android/*-Signed.apk
+          
+          # Clear previous emulator logs
+          adb logcat -c
+          
+          # Boot the native wrapper activity we injected
+          adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
+          
+          # Wait 5 seconds for execution, then print the logcat output
+          sleep 5
+          adb logcat -d | grep -i specialdirs || adb logcat -d
 
   # 3. iOS Mobile Run
   ios-mobile-run:
@@ -138,7 +149,8 @@ jobs:
         xharness apple run --app="bin/Release/net8.0-ios/iossimulator-x64/ios.app" --targets="ios-simulator-64" --output-directory="ios-results"
 
     - name: Upload iOS Logs
+      uses: actions/upload-artifact@v4
       if: always() # Uploads even if XHarness fails
-      run: |
-        # Print just the application's specific log file to the console
-        cat ios-results/com.ahenyao.specialdirs.log || true
+      with:
+        name: ios-logs
+        path: ios-results/
