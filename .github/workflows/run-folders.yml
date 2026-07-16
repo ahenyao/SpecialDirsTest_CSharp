@@ -25,12 +25,19 @@ jobs:
     - name: Run App
       run: dotnet run --project specialdirs.csproj
 
-  # 2. Android Mobile Run (Fixed: using macos-14 with native ARM64 emulator)
+  # 2. Android Mobile Run (Fixed: using ubuntu-22.04 for native KVM hardware acceleration)
   android-mobile-run:
-    runs-on: macos-14
+    runs-on: ubuntu-22.04
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+
+    # Fixes occasional KVM permission hiccups on GitHub Linux runners
+    - name: Enable KVM group permissions
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
@@ -49,17 +56,16 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 34
-        arch: arm64-v8a # Crucial: Matches the Apple Silicon host natively
+        arch: x86_64  # Standard fast architecture for Linux KVM
         target: google_apis
         script: |
-          # /p:CheckEolTargetFramework=false bypasses the NETSDK1202 support warning
           dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true /p:CheckEolTargetFramework=false
           xharness android run \
             --app="bin/Release/net8.0-android/specialdirs.apk" \
             --package-name="com.ahenyao.specialdirs" \
             --output-directory="android-results"
 
-  # 3. iOS Mobile Run (Fixed: Bypassing the EOL warning)
+  # 3. iOS Mobile Run
   ios-mobile-run:
     runs-on: macos-14
     steps:
@@ -81,7 +87,6 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        # /p:CheckEolTargetFramework=false bypasses the NETSDK1202 support warning
         dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:CheckEolTargetFramework=false
         xharness apple run \
           --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" \
