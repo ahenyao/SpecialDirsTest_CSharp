@@ -61,29 +61,8 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ahenyao.specialdirs" />' > AndroidManifest.xml
-          
-          dotnet build android.csproj -c Release
-          
-          adb install bin/Release/net8.0-android/*-Signed.apk
-          adb logcat -c
-          
-          adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
-          
-          sleep 5
-          # Dump the logcat into a text file in a results folder
-          mkdir -p android-results
-          adb logcat -d > android-results/android-logcat.log
-          
-          # Print the filtered logs to the console
-          cat android-results/android-logcat.log | grep -i specialdirs || true
-
-    - name: Upload Android Logs
-      uses: actions/upload-artifact@v4
-      if: always() # Uploads even if the step above fails
-      with:
-        name: android-logs
-        path: android-results/
+          # dotnet run automatically builds, deploys to the emulator, launches, and pipes logs!
+          dotnet run --project android.csproj -c Release
 
   # 3. iOS Mobile Run
   ios-mobile-run:
@@ -112,13 +91,9 @@ jobs:
         dotnet build ios.csproj -c Release -r iossimulator-x64
         
         xharness apple run --app="bin/Release/net8.0-ios/iossimulator-x64/ios.app" --targets="ios-simulator-64" --output-directory="ios-results"
-        
-        # Print just the application's specific log file to the console
-        cat ios-results/com.ahenyao.specialdirs.log || true
 
     - name: Upload iOS Logs
-      uses: actions/upload-artifact@v4
       if: always() # Uploads even if XHarness fails
-      with:
-        name: ios-logs
-        path: ios-results/
+      run: |
+        # Print just the application's specific log file to the console
+        cat ios-results/com.ahenyao.specialdirs.log || true
