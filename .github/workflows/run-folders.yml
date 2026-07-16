@@ -25,9 +25,9 @@ jobs:
     - name: Run App
       run: dotnet run --project specialdirs.csproj
 
-  # 2. Android Mobile Run
+  # 2. Android Mobile Run (Fixed: using macos-14 with native ARM64 emulator)
   android-mobile-run:
-    runs-on: macos-13
+    runs-on: macos-14
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -49,16 +49,17 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 34
-        arch: x86_64
+        arch: arm64-v8a # Crucial: Matches the Apple Silicon host natively
         target: google_apis
         script: |
-          dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true
+          # /p:CheckEolTargetFramework=false bypasses the NETSDK1202 support warning
+          dotnet build specialdirs.csproj -c Release /p:TargetAndroid=true /p:CheckEolTargetFramework=false
           xharness android run \
             --app="bin/Release/net8.0-android/specialdirs.apk" \
             --package-name="com.ahenyao.specialdirs" \
             --output-directory="android-results"
 
-  # 3. iOS Mobile Run
+  # 3. iOS Mobile Run (Fixed: Bypassing the EOL warning)
   ios-mobile-run:
     runs-on: macos-14
     steps:
@@ -80,8 +81,8 @@ jobs:
 
     - name: Run on iOS Simulator
       run: |
-        # Build paths now naturally fall into net8.0-ios structures
-        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true
+        # /p:CheckEolTargetFramework=false bypasses the NETSDK1202 support warning
+        dotnet build specialdirs.csproj -c Release -r iossimulator-x64 /p:TargetiOS=true /p:CheckEolTargetFramework=false
         xharness apple run \
           --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" \
           --targets="ios-simulator-64" \
