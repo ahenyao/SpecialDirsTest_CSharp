@@ -44,7 +44,6 @@ jobs:
 
     - name: Install .NET Android Workload
       run: |
-        # Step out of the project folder to avoid multi-project ambiguity
         cd ~
         dotnet workload install android
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
@@ -58,16 +57,12 @@ jobs:
         script: |
           dotnet build android.csproj -c Release /p:CheckEolWorkloads=false
           
-          # Install the built APK
-          adb install bin/Release/net8.0-android/*-Signed.apk
+          # Notice the updated folder path and wildcard
+          adb install bin/Release/net8.0-android34.0/*-Signed.apk
           
-          # Clear previous emulator logs
           adb logcat -c
-          
-          # Boot the app natively
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           
-          # Wait 5 seconds for execution, then print the logcat output
           sleep 5
           adb logcat -d | grep -i specialdirs || adb logcat -d
 
@@ -85,7 +80,6 @@ jobs:
 
     - name: Install .NET iOS Workload
       run: |
-        # Step out of the project folder to avoid multi-project ambiguity
         cd ~
         dotnet workload install ios
         dotnet tool install Microsoft.DotNet.XHarness.CLI --global --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" --version "11.0.0-prerelease*"
@@ -94,6 +88,7 @@ jobs:
       run: |
         dotnet build ios.csproj -c Release -r iossimulator-x64 /p:CheckEolWorkloads=false
         
-        xharness apple run --app="bin/Release/net8.0-ios/iossimulator-x64/specialdirs.app" --targets="ios-simulator-64" --output-directory="ios-results"
+        # Notice the updated folder path and app name (ios.app)
+        xharness apple run --app="bin/Release/net8.0-ios15.0/iossimulator-x64/ios.app" --targets="ios-simulator-64" --output-directory="ios-results"
         
         cat ios-results/*.log || true
