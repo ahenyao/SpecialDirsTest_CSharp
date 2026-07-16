@@ -23,7 +23,6 @@ jobs:
         dotnet-version: 9.0.x
 
     - name: Run App
-      # No extra work needed here; it will default to net9.0 and run smoothly
       run: dotnet run --project specialdirs.csproj
 
   # 2. Mobile Platforms (Android & iOS)
@@ -41,8 +40,12 @@ jobs:
     - name: Install .NET iOS and Android Workloads
       run: |
         dotnet workload install ios android
-        # Install the tool with explicit source and allowing prerelease versions if necessary
-        dotnet tool install --global Microsoft.DotNet.XHarness.CLI --version "9.0.0-*" --add-source https://pkgs.dev.azure.com/dnceng/public/_nuget/v3/index.json || dotnet tool install --global Microsoft.DotNet.XHarness.CLI
+        
+        # Installs the official XHarness CLI using the public dotnet-eng feed and version
+        dotnet tool install Microsoft.DotNet.XHarness.CLI \
+          --global \
+          --add-source "https://pkgs.dev.azure.com/dnceng/public/_packaging/dotnet-eng/nuget/v3/index.json" \
+          --version "11.0.0-prerelease*"
 
     # Android Run
     - name: Run on Android Emulator
@@ -52,7 +55,6 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          # We pass /p:MobileBuild=true to activate the android target framework
           dotnet build specialdirs.csproj -c Release -f net9.0-android /p:MobileBuild=true
           xharness android run \
             --app="bin/Release/net9.0-android/specialdirs.apk" \
@@ -62,7 +64,6 @@ jobs:
     # iOS Run
     - name: Run on iOS Simulator
       run: |
-        # We pass /p:MobileBuild=true to activate the ios target framework
         dotnet build specialdirs.csproj -c Release -f net9.0-ios -r iossimulator-x64 /p:MobileBuild=true
         xharness apple run \
           --app="bin/Release/net9.0-ios/iossimulator-x64/specialdirs.app" \
