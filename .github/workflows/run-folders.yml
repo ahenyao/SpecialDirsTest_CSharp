@@ -52,7 +52,7 @@ jobs:
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 34
-        arch: x86_64
+        arch: arm64-v8a  # Uses native ARM64 for Apple Silicon runners
         target: google_apis
         script: |
           dotnet build specialdirs.csproj -c Release -f net9.0-android /p:MobileBuild=true
