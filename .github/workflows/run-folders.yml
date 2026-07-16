@@ -61,6 +61,9 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
+          # Generate the required AndroidManifest.xml file for the build to succeed
+          echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ahenyao.specialdirs"><application android:label="specialdirs" /></manifest>' > AndroidManifest.xml
+          
           # dotnet run automatically builds, deploys to the emulator, launches, and pipes logs!
           dotnet run --project android.csproj -c Release
 
