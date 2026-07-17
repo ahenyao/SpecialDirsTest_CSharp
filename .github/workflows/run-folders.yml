@@ -37,8 +37,14 @@ jobs:
 
     - name: Isolate Project Context & Pin SDK
       run: |
+        # 1. Clean up competing projects
         rm desktop.csproj ios.csproj specialdirs.csproj 2>/dev/null || true
+        
+        # 2. Pin the SDK version
         echo '{"sdk":{"version":"8.0.0","rollForward":"latestFeature"}}' > global.json
+        
+        # 3. Create the placeholder manifest right here so it never gets deleted prematurely
+        echo '<?xml version="1.0" encoding="utf-8"?><manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.ahenyao.specialdirs"><application android:label="specialdirs" /></manifest>' > AndroidManifest.xml
 
     - name: Enable KVM group permissions
       run: |
@@ -54,7 +60,6 @@ jobs:
     - name: Install .NET Android Workload
       run: dotnet workload restore
 
-    # Creates a native bridge class so the OS knows how to launch the C# console entry point
     - name: Inject Native Android Launcher Entry
       run: |
         mkdir -p Properties
@@ -100,7 +105,7 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          # Automatically builds, provisions the emulator, executes the binary, and captures the stdout output stream!
+          # The placeholder file is ready, the custom launcher is ready, let's roll!
           dotnet run --project android.csproj -c Release
 
   # 3. iOS Mobile Run
