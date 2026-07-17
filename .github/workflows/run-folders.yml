@@ -60,6 +60,7 @@ jobs:
     - name: Install .NET Android Workload
       run: dotnet workload restore
 
+    # Fix: Fully qualify System.Environment to clear up compilation ambiguity
     - name: Inject Native Android Launcher Entry
       run: |
         mkdir -p Properties
@@ -92,7 +93,7 @@ jobs:
                         Console.WriteLine("Error executing main: " + ex.Message);
                     }
                     Console.WriteLine("====== END APP EXECUTION ======");
-                    Environment.Exit(0);
+                    System.Environment.Exit(0);
                 }
             }
         }
@@ -105,7 +106,6 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          # The placeholder file is ready, the custom launcher is ready, let's roll!
           dotnet run --project android.csproj -c Release
 
   # 3. iOS Mobile Run
