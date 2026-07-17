@@ -6,12 +6,25 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. Desktop Platforms
+  # 1. Desktop Platforms (Split into 4 explicit runtime contexts)
   desktop-run:
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: macos-latest
+            name: macos-latest
+            gui: false
+          - os: windows-latest
+            name: windows-latest
+            gui: false
+          - os: ubuntu-latest
+            name: ubuntu-latest-tty
+            gui: false
+          - os: ubuntu-latest
+            name: ubuntu-latest-gui
+            gui: true
     runs-on: ${{ matrix.os }}
+    name: desktop-run (${{ matrix.name }})
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -25,8 +38,33 @@ jobs:
       with:
         dotnet-version: 8.0.x
 
-    - name: Run App
-      run: dotnet run --project desktop.csproj
+    # Install Xfce package layers exclusively for the Ubuntu GUI runtime block
+    - name: Install Xfce and Virtual Display (Ubuntu GUI Only)
+      if: matrix.name == 'ubuntu-latest-gui'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y xfce4 xvfb dbus-x11
+
+    - name: Run App and Capture Logs
+      shell: bash
+      run: |
+        mkdir -p desktop-results
+        if [ "${{ matrix.name }}" = "ubuntu-latest-gui" ]; then
+          # Start a virtual X-server session, launch dbus, and execute your app inside xfce
+          xvfb-run --server-args="-screen 0 1024x768x24" dbus-launch xfce4-session &
+          sleep 3
+          DISPLAY=:99 dotnet run --project desktop.csproj | tee desktop-results/${{ matrix.name }}.log
+        else
+          # Standard launch path for Windows, macOS, and raw Ubuntu TTY
+          dotnet run --project desktop.csproj | tee desktop-results/${{ matrix.name }}.log
+        fi
+
+    - name: Upload Desktop Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: desktop-logs-${{ matrix.name }}
+        path: desktop-results/
 
   # 2. Android Mobile Run
   android-mobile-run:
@@ -55,7 +93,6 @@ jobs:
     - name: Install .NET Android Workload
       run: dotnet workload restore
 
-    # Fix: Use explicit binding flags in Reflection to call your Main() method even if it's private/internal
     - name: Inject Native Android Launcher Entry
       run: |
         mkdir -p Properties
@@ -122,7 +159,17 @@ jobs:
           adb logcat -c
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           sleep 5
-          adb logcat -d
+          
+          # Initialize working space directory for logging output artifacts
+          mkdir -p android-results
+          adb logcat -d > android-results/android-logcat.txt
+
+    - name: Upload Android Logs
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: android-logs
+        path: android-results/
 
   # 3. iOS Mobile Run
   ios-mobile-run:
@@ -154,7 +201,7 @@ jobs:
 
     - name: Upload iOS Logs
       uses: actions/upload-artifact@v4
-      if: always() # Uploads even if XHarness fails
+      if: always()
       with:
         name: ios-logs
         path: ios-results/
