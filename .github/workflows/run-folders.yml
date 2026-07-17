@@ -55,6 +55,7 @@ jobs:
     - name: Install .NET Android Workload
       run: dotnet workload restore
 
+    # Fix: Use explicit binding flags in Reflection to call your Main() method even if it's private/internal
     - name: Inject Native Android Launcher Entry
       run: |
         mkdir -p Properties
@@ -62,6 +63,7 @@ jobs:
         using Android.App;
         using Android.OS;
         using System;
+        using System.Reflection;
 
         namespace AndroidAutoLauncher
         {
@@ -74,12 +76,32 @@ jobs:
                     Console.WriteLine("====== STARTING APP EXECUTION ======");
                     try
                     {
-                        // Direct call to your program instead of relying on Reflection lookup
-                        Program.Main(Array.Empty<string>());
+                        // Look for a class named "Program" anywhere in the compiled assembly
+                        Type programType = Type.GetType("Program") ?? Type.GetType("SpecialDirs.Program");
+                        
+                        if (programType != null)
+                        {
+                            // Target Main regardless of whether it is public, private, or internal
+                            MethodInfo mainMethod = programType.GetMethod("Main", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+                            
+                            if (mainMethod != null)
+                            {
+                                var parameters = mainMethod.GetParameters().Length > 0 ? new object[] { Array.Empty<string>() } : null;
+                                mainMethod.Invoke(null, parameters);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Error: Could not locate a valid Main() method inside Program class.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Error: Could not locate a target Program class.");
+                        }
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine("Error executing main: " + ex.ToString());
+                        Console.WriteLine("Error executing main loop: " + ex.ToString());
                     }
                     Console.WriteLine("====== END APP EXECUTION ======");
                     System.Environment.Exit(0);
