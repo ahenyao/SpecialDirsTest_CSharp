@@ -106,23 +106,23 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          # 1. Compile and produce the finalized signed APK file 
+          # 1. Compile the finalized signed APK file 
           dotnet build android.csproj -c Release
           
-          # 2. Push and install the signed binary onto the running emulator instance
+          # 2. Install the signed binary onto the emulator instance
           adb install bin/Release/net8.0-android/*-Signed.apk
           
-          # 3. Clear out old background system noise from the log buffer
+          # 3. Clear old system noise from the log buffer
           adb logcat -c
           
-          # 4. Fire open the native app door via its specific package ID
+          # 4. Launch the app via its package ID
           adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
           
-          # 5. Let the app execute safely
+          # 5. Let the app execute completely
           sleep 5
           
-          # 6. CRITICAL FIX: Filter by the "DOTNET" tag to see the actual folders/errors
-          adb logcat -d | grep "DOTNET" || adb logcat -d
+          # 6. FIX: Dump everything the app printed
+          adb logcat -d
 
   # 3. iOS Mobile Run
   ios-mobile-run:
