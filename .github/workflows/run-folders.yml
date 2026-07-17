@@ -106,7 +106,23 @@ jobs:
         arch: x86_64
         target: google_apis
         script: |
-          dotnet run --project android.csproj -c Release
+          # 1. Compile and produce the finalized signed APK file 
+          dotnet build android.csproj -c Release
+          
+          # 2. Push and install the signed binary onto the running emulator instance
+          adb install bin/Release/net8.0-android/*-Signed.apk
+          
+          # 3. Clear out old background system noise from the log buffer
+          adb logcat -c
+          
+          # 4. Fire open the native app door via its specific package ID
+          adb shell monkey -p com.ahenyao.specialdirs -c android.intent.category.LAUNCHER 1
+          
+          # 5. Let the app write its text stream to the disk safely
+          sleep 5
+          
+          # 6. Dump the logcat data directly to the action console window
+          adb logcat -d | grep -E "STARTING APP EXECUTION|SpecialFolder|END APP EXECUTION" || adb logcat -d
 
   # 3. iOS Mobile Run
   ios-mobile-run:
